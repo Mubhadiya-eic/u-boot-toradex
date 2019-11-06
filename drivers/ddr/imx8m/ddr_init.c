@@ -12,6 +12,11 @@
 #include <asm/arch/imx8m_ddr.h>
 #include <asm/arch/sys_proto.h>
 
+static int is_imx8mn(void)
+{
+	return false;
+}
+
 void ddr_cfg_umctl2(struct dram_cfg_param *ddrc_cfg, int num)
 {
 	int i = 0;
