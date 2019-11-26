@@ -128,6 +128,11 @@ u32 spl_boot_device(void)
 	case SD2_BOOT:
 	case MMC2_BOOT:
 		return BOOT_DEVICE_MMC2;
+#if defined(CONFIG_IMX8MM)
+	case SD3_BOOT:
+	case MMC3_BOOT:
+		return BOOT_DEVICE_MMC1;
+#endif
 #endif
 	case NAND_BOOT:
 		return BOOT_DEVICE_NAND;
@@ -161,6 +166,7 @@ u32 spl_boot_mode(const u32 boot_device)
 	/* for MMC return either RAW or FAT mode */
 	case SD1_BOOT:
 	case SD2_BOOT:
+	case SD3_BOOT:
 #if defined(CONFIG_SPL_FAT_SUPPORT)
 		return MMCSD_MODE_FS;
 #else
@@ -169,6 +175,7 @@ u32 spl_boot_mode(const u32 boot_device)
 		break;
 	case MMC1_BOOT:
 	case MMC2_BOOT:
+	case MMC3_BOOT:
 #if defined(CONFIG_SPL_FAT_SUPPORT)
 		return MMCSD_MODE_FS;
 #elif defined(CONFIG_SUPPORT_EMMC_BOOT)
