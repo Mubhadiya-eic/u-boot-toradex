@@ -18,6 +18,9 @@
 static char tdx_serial_str[9];
 static char tdx_board_rev_str[6];
 
+static char tdx_car_serial_str[9];
+static char tdx_car_rev_str[6];
+
 #ifdef CONFIG_REVISION_TAG
 u32 get_board_rev(void)
 {
@@ -69,6 +72,7 @@ int show_board_info(void)
 {
 	unsigned char ethaddr[6];
 	char* tdx_module_name;
+	char* tdx_carrier_name;
 
 	if (read_tdx_cfg_block()) {
 		printf("MISSING TORADEX CONFIG BLOCK\n");
@@ -83,6 +87,7 @@ int show_board_info(void)
 			tdx_module_name = (char *)
 				toradex_modules[tdx_hw_tag.prodid];
 		}
+
 		sprintf(tdx_serial_str, "%08u", tdx_serial);
 		sprintf(tdx_board_rev_str, "V%1d.%1d%c",
 			tdx_hw_tag.ver_major,
@@ -95,6 +100,27 @@ int show_board_info(void)
 		       tdx_module_name,
 		       tdx_board_rev_str,
 		       tdx_serial_str);
+#ifdef CONFIG_TDX_CFG_BLOCK_EXTRA
+		if (read_tdx_cfg_block_extra()) {
+			printf("MISSING TORADEX EXTRA CONFIG BLOCKS\n");
+		} else {
+			tdx_carrier_name = (char *)
+				toradex_carriers[tdx_car_hw_tag.prodid];
+
+			sprintf(tdx_car_serial_str, "%08u", tdx_car_serial);
+			sprintf(tdx_car_rev_str, "V%1d.%1d%c",
+					tdx_car_hw_tag.ver_major,
+					tdx_car_hw_tag.ver_minor,
+					(char)tdx_car_hw_tag.ver_assembly +
+					'A');
+
+			env_set("carrier_serial#", tdx_car_serial_str);
+			printf("Carrier: Toradex %s %s, Serial# %s\n",
+					tdx_carrier_name,
+					tdx_car_rev_str,
+					tdx_car_serial_str);
+		}
+#endif
 	}
 
 	/*
