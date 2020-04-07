@@ -39,7 +39,31 @@ static int i2c_eeprom_std_read(struct udevice *dev, int offset, uint8_t *buf,
 static int i2c_eeprom_std_write(struct udevice *dev, int offset,
 				const uint8_t *buf, int size)
 {
-	return -ENODEV;
+	uint8_t *buf_p = (uint8_t *) buf;
+	struct dm_i2c_chip *i2c_chip;
+	int ret;
+
+	i2c_chip = dev_get_parent_platdata(dev);
+	if (!i2c_chip)
+		return -ENOSYS;
+
+	/*
+	 * Repeated addressing - perform <length> separate
+	 * write transactions of one byte each
+	 */
+	while (size-- > 0) {
+		i2c_chip->flags |= DM_I2C_CHIP_WR_ADDRESS;
+
+		ret = dm_i2c_write(dev, offset++, buf_p++, 1);
+		if (ret)
+			return ret;
+
+#if !defined(CONFIG_SYS_I2C_FRAM)
+		udelay(11000);
+#endif
+	}
+
+	return ret;
 }
 
 static const struct i2c_eeprom_ops i2c_eeprom_std_ops = {
