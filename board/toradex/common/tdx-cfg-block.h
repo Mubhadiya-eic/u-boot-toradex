@@ -94,7 +94,7 @@ enum {
 
 extern const char * const toradex_modules[];
 extern const char * const toradex_prototype_modules[];
-extern const char * const toradex_carriers[];
+extern const char * const toradex_carrier_boards[];
 extern bool valid_cfgblock;
 extern struct toradex_hw tdx_hw_tag;
 extern struct toradex_hw tdx_car_hw_tag;
@@ -103,7 +103,8 @@ extern u32 tdx_serial;
 extern u32 tdx_car_serial;
 
 int read_tdx_cfg_block(void);
-int read_tdx_cfg_block_extra(void);
+int read_tdx_cfg_block_carrier(void);
+int try_migrate_tdx_cfg_block_carrier(void);
 
 int is_tdx_prototype_prodid(u16 prodid);
 

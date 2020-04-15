@@ -67,7 +67,7 @@ struct toradex_tag {
 };
 
 bool valid_cfgblock;
-bool valid_cfgblock_extra;
+bool valid_cfgblock_carrier;
 struct toradex_hw tdx_hw_tag;
 struct toradex_hw tdx_car_hw_tag;
 struct toradex_eth_addr tdx_eth_addr;
@@ -139,7 +139,7 @@ const char * const toradex_prototype_modules[] = {
 	[0] = "Apalis iMX8QXP 2GB ECC Wi / BT IT PROTO"
 };
 
-const char * const toradex_carriers[] = {
+const char * const toradex_carrier_boards[] = {
 	[0] = "UNKNOWN CARRIER",
 	[155] = "Dahlia",
 	[156] = "Verdin Development Board",
@@ -275,7 +275,7 @@ int is_tdx_prototype_prodid(u16 prodid)
 		(prodid < prototype_range_max));
 }
 
-int read_tdx_cfg_block_extra(void)
+int read_tdx_cfg_block_carrier(void)
 {
 	int ret = 0;
 	u8 *config_block = NULL;
@@ -283,7 +283,7 @@ int read_tdx_cfg_block_extra(void)
 	size_t size = TDX_CFG_BLOCK_EXTRA_MAX_SIZE;
 	int offset;
 
-	/* Allocate RAM area for extra config block */
+	/* Allocate RAM area for carrier config block */
 	config_block = memalign(ARCH_DMA_MINALIGN, size);
 	if (!config_block) {
 		printf("Not enough malloc space available!\n");
@@ -300,11 +300,11 @@ int read_tdx_cfg_block_extra(void)
 	/* Expect a valid tag first */
 	tag = (struct toradex_tag *)config_block;
 	if (tag->flags != TAG_FLAG_VALID || tag->id != TAG_VALID) {
-		valid_cfgblock_extra = false;
+		valid_cfgblock_carrier = false;
 		ret = -EINVAL;
 		goto out;
 	}
-	valid_cfgblock_extra = true;
+	valid_cfgblock_carrier = true;
 	offset = 4;
 
 	while (offset + sizeof(struct toradex_tag) +
@@ -678,6 +678,85 @@ static int write_tag(u8 *config_block, int *offset, int tag_id,
 	return 0;
 }
 
+int check_pid8_sanity(char *pid8)
+{
+	char s_carrierid_verdin[5];
+	char s_carrierid_dahlia[5];
+
+	sprintf(s_carrierid_verdin, "0%d", VERDIN_DEVELOPMENT_BOARD);
+	sprintf(s_carrierid_dahlia, "0%d", DAHLIA);
+
+	/* sane value check, first 4 chars which represent carrier id */
+	if (!strncmp(pid8, s_carrierid_verdin, 4))
+		return 0;
+
+	if (!strncmp(pid8, s_carrierid_dahlia, 4))
+		return 0;
+
+	return -EINVAL;
+}
+
+int try_migrate_tdx_cfg_block_carrier(void)
+{
+	char pid8[8];
+	int offset = 0;
+	int ret = CMD_RET_SUCCESS;
+	size_t size = TDX_CFG_BLOCK_EXTRA_MAX_SIZE;
+	u8 *config_block;
+
+	memset(pid8, 0x0, 8);
+	ret = read_tdx_eeprom_data(TDX_EEPROM_ID_CARRIER, 0x0, (u8 *)pid8, 8);
+	if (ret)
+		return ret;
+
+	if (check_pid8_sanity(pid8)) {
+		return -EINVAL;
+	}
+
+	/* Allocate RAM area for config block */
+	config_block = memalign(ARCH_DMA_MINALIGN, size);
+	if (!config_block) {
+		printf("Not enough malloc space available!\n");
+		return CMD_RET_FAILURE;
+	}
+
+	memset(config_block, 0xff, size);
+	/* we try parse PID8 concatenating zeroed serial number */
+	tdx_car_hw_tag.ver_major = pid8[4] - '0';
+	tdx_car_hw_tag.ver_minor = pid8[5] - '0';
+	tdx_car_hw_tag.ver_assembly = pid8[7] - '0';
+
+	pid8[4] = '\0';
+	tdx_car_hw_tag.prodid = simple_strtoul(pid8, NULL, 10);
+
+	/* Valid Tag */
+	write_tag(config_block, &offset, TAG_VALID, NULL, 0);
+
+	/* Product Tag */
+	write_tag(config_block, &offset, TAG_HW, (u8 *)&tdx_car_hw_tag,
+		  sizeof(tdx_car_hw_tag));
+
+	/* Serial Tag */
+	write_tag(config_block, &offset, TAG_CAR_SERIAL, (u8 *)&tdx_car_serial,
+		  sizeof(tdx_car_serial));
+
+	memset(config_block + offset, 0, 32 - offset);
+	ret = write_tdx_eeprom_data(TDX_EEPROM_ID_CARRIER, 0x0, config_block,
+				    size);
+	if (ret) {
+		printf("Failed to write Toradex Extra config block: %d\n",
+		       ret);
+		ret = CMD_RET_FAILURE;
+		goto out;
+	}
+
+	printf("Successfully migrated to Toradex Config Block from PID8\n");
+
+out:
+	free(config_block);
+	return ret;
+}
+
 static int get_cfgblock_carrier_interactive(void)
 {
 	char message[CONFIG_SYS_CBSIZE];
@@ -685,10 +764,10 @@ static int get_cfgblock_carrier_interactive(void)
 
 	printf("Supported carrier boards: \n");
 	printf("CARRIER BOARD NAME\t\t [ID] \n");
-	for (int i = 0; i < sizeof(toradex_carriers) /
-			    sizeof(toradex_carriers[0]); i++)
-		if(toradex_carriers[i])
-			printf("%s \t\t [%d]\n", toradex_carriers[i], i);
+	for (int i = 0; i < sizeof(toradex_carrier_boards) /
+			    sizeof(toradex_carrier_boards[0]); i++)
+		if(toradex_carrier_boards[i])
+			printf("%s \t\t [%d]\n", toradex_carrier_boards[i], i);
 
 	sprintf(message, "Choose your carrier board (provide ID): ");
 	len = cli_readline(message);
@@ -736,8 +815,8 @@ static int do_cfgblock_carrier_create(cmd_tbl_t *cmdtp, int flag, int argc,
 	}
 
 	memset(config_block, 0xff, size);
-	read_tdx_cfg_block_extra();
-	if (valid_cfgblock_extra && !force_overwrite) {
+	read_tdx_cfg_block_carrier();
+	if (valid_cfgblock_carrier && !force_overwrite) {
 			char message[CONFIG_SYS_CBSIZE];
 
 			sprintf(message,
