@@ -108,6 +108,7 @@
 
 /* Enable Distro Boot */
 #ifndef CONFIG_SPL_BUILD
+#undef CONFIG_BOOTCOMMAND
 #define CONFIG_BOOTCOMMAND "setenv fdtfile " FDT_FILE " && run distro_bootcmd;"
 #define BOOT_TARGET_DEVICES(func) \
 	func(MMC, mmc, 1) \
