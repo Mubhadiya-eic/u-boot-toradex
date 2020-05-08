@@ -56,7 +56,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #error Toradex config block location not set
 #endif
 
-#if defined(CONFIG_TDX_CFG_BLOCK_EXTRA)
+#ifdef CONFIG_TDX_CFG_BLOCK_EXTRA
 #define TDX_CFG_BLOCK_EXTRA_MAX_SIZE 64
 #endif
 
@@ -67,12 +67,14 @@ struct toradex_tag {
 };
 
 bool valid_cfgblock;
-bool valid_cfgblock_carrier;
 struct toradex_hw tdx_hw_tag;
-struct toradex_hw tdx_car_hw_tag;
 struct toradex_eth_addr tdx_eth_addr;
 u32 tdx_serial;
+#ifdef CONFIG_TDX_CFG_BLOCK_EXTRA
 u32 tdx_car_serial;
+bool valid_cfgblock_carrier;
+struct toradex_hw tdx_car_hw_tag;
+#endif
 
 const char * const toradex_modules[] = {
 	 [0] = "UNKNOWN MODULE",
@@ -275,65 +277,6 @@ int is_tdx_prototype_prodid(u16 prodid)
 		(prodid < prototype_range_max));
 }
 
-int read_tdx_cfg_block_carrier(void)
-{
-	int ret = 0;
-	u8 *config_block = NULL;
-	struct toradex_tag *tag;
-	size_t size = TDX_CFG_BLOCK_EXTRA_MAX_SIZE;
-	int offset;
-
-	/* Allocate RAM area for carrier config block */
-	config_block = memalign(ARCH_DMA_MINALIGN, size);
-	if (!config_block) {
-		printf("Not enough malloc space available!\n");
-		return -ENOMEM;
-	}
-
-	memset(config_block, 0, size);
-
-	ret = read_tdx_eeprom_data(TDX_EEPROM_ID_CARRIER, 0x0, config_block,
-				   size);
-	if (ret)
-		return ret;
-
-	/* Expect a valid tag first */
-	tag = (struct toradex_tag *)config_block;
-	if (tag->flags != TAG_FLAG_VALID || tag->id != TAG_VALID) {
-		valid_cfgblock_carrier = false;
-		ret = -EINVAL;
-		goto out;
-	}
-	valid_cfgblock_carrier = true;
-	offset = 4;
-
-	while (offset + sizeof(struct toradex_tag) +
-	       sizeof(struct toradex_hw) < TDX_CFG_BLOCK_MAX_SIZE) {
-		tag = (struct toradex_tag *)(config_block + offset);
-		offset += 4;
-		if (tag->id == TAG_INVALID)
-			break;
-
-		if (tag->flags == TAG_FLAG_VALID) {
-			switch (tag->id) {
-			case TAG_CAR_SERIAL:
-				memcpy(&tdx_car_serial, config_block + offset,
-				       sizeof(tdx_car_serial));
-				break;
-			case TAG_HW:
-				memcpy(&tdx_car_hw_tag, config_block +
-				       offset, 8);
-				break;
-			}
-		}
-
-		/* Get to next tag according to current tags length */
-		offset += tag->len * 4;
-	}
-out:
-	free(config_block);
-	return ret;
-}
 
 int read_tdx_cfg_block(void)
 {
@@ -678,6 +621,67 @@ static int write_tag(u8 *config_block, int *offset, int tag_id,
 	return 0;
 }
 
+#ifdef CONFIG_TDX_CFG_BLOCK_EXTRA
+int read_tdx_cfg_block_carrier(void)
+{
+	int ret = 0;
+	u8 *config_block = NULL;
+	struct toradex_tag *tag;
+	size_t size = TDX_CFG_BLOCK_EXTRA_MAX_SIZE;
+	int offset;
+
+	/* Allocate RAM area for carrier config block */
+	config_block = memalign(ARCH_DMA_MINALIGN, size);
+	if (!config_block) {
+		printf("Not enough malloc space available!\n");
+		return -ENOMEM;
+	}
+
+	memset(config_block, 0, size);
+
+	ret = read_tdx_eeprom_data(TDX_EEPROM_ID_CARRIER, 0x0, config_block,
+				   size);
+	if (ret)
+		return ret;
+
+	/* Expect a valid tag first */
+	tag = (struct toradex_tag *)config_block;
+	if (tag->flags != TAG_FLAG_VALID || tag->id != TAG_VALID) {
+		valid_cfgblock_carrier = false;
+		ret = -EINVAL;
+		goto out;
+	}
+	valid_cfgblock_carrier = true;
+	offset = 4;
+
+	while (offset + sizeof(struct toradex_tag) +
+	       sizeof(struct toradex_hw) < TDX_CFG_BLOCK_MAX_SIZE) {
+		tag = (struct toradex_tag *)(config_block + offset);
+		offset += 4;
+		if (tag->id == TAG_INVALID)
+			break;
+
+		if (tag->flags == TAG_FLAG_VALID) {
+			switch (tag->id) {
+			case TAG_CAR_SERIAL:
+				memcpy(&tdx_car_serial, config_block + offset,
+				       sizeof(tdx_car_serial));
+				break;
+			case TAG_HW:
+				memcpy(&tdx_car_hw_tag, config_block +
+				       offset, 8);
+				break;
+			}
+		}
+
+		/* Get to next tag according to current tags length */
+		offset += tag->len * 4;
+	}
+out:
+	free(config_block);
+	return ret;
+}
+
 int check_pid8_sanity(char *pid8)
 {
 	char s_carrierid_verdin[5];
@@ -875,6 +879,8 @@ out:
 	return ret;
 }
 
+#endif /* CONFIG_TDX_CFG_BLOCK_EXTRA */
+
 static int do_cfgblock_create(cmd_tbl_t *cmdtp, int flag, int argc,
 			      char * const argv[])
 {
@@ -886,9 +892,11 @@ static int do_cfgblock_create(cmd_tbl_t *cmdtp, int flag, int argc,
 	int force_overwrite = 0;
 
 	if (argc >= 3) {
+#ifdef CONFIG_TDX_CFG_BLOCK_EXTRA
 		if (!strcmp(argv[2], "carrier"))
 			return do_cfgblock_carrier_create(cmdtp, flag,
 							  --argc, ++argv);
+#endif /* CONFIG_TDX_CFG_BLOCK_EXTRA */
 		if (argv[2][0] == '-' && argv[2][1] == 'y')
 			force_overwrite = 1;
 	}
