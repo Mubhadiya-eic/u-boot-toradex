@@ -368,6 +368,8 @@ U_BOOT_CMD(
 
 int board_late_init(void)
 {
+	sc_ipc_t ipcHndl = 0;
+
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 /* TODO move to common */
 	env_set("board_name", "Apalis iMX8QM");
@@ -403,6 +405,18 @@ int board_late_init(void)
 #endif
 
 	select_dt_from_module_version();
+
+	ipcHndl = gd->arch.ipc_channel_handle;
+	/*
+	 * reset the USB HSIC signals to their powerup state.
+	 * If imx-atf is configured to just reset the AP partition, then USB1
+	 * HSIC is in a state which prevents the bring up of the HSIC PHY.
+	 * Prevent this by resetting the pad muxing and config.
+	 */
+	(void) sc_pad_set_all(ipcHndl, SC_P_USB_HSIC0_DATA, 0,
+		SC_PAD_CONFIG_NORMAL, SC_PAD_ISO_OFF, 0x85, 0);
+	(void) sc_pad_set_all(ipcHndl, SC_P_USB_HSIC0_STROBE, 0,
+		SC_PAD_CONFIG_NORMAL, SC_PAD_ISO_OFF, 0x85, 0);
 
 	return 0;
 }
