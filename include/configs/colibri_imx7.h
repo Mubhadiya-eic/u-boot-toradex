@@ -46,24 +46,6 @@
 #define CONFIG_NETMASK			255.255.255.0
 #define CONFIG_SERVERIP			192.168.10.1
 
-#define EMMC_BOOTCMD \
-	"set_emmcargs=setenv emmcargs ip=off root=PARTUUID=${uuid} ro " \
-		"rootfstype=ext4 rootwait\0" \
-	"emmcboot=run setup; run emmcfinduuid; run set_emmcargs; " \
-		"setenv bootargs ${defargs} ${emmcargs} ${setupargs} " \
-		"${vidargs}; echo Booting from internal eMMC chip...; " \
-		"run m4boot && " \
-		"load mmc ${emmcdev}:${emmcbootpart} ${fdt_addr_r} " \
-		"${soc}-colibri-emmc-${fdt_board}.dtb && " \
-		"load mmc ${emmcdev}:${emmcbootpart} ${kernel_addr_r} " \
-		"${boot_file} && run fdt_fixup && " \
-		"bootz ${kernel_addr_r} - ${fdt_addr_r}\0" \
-	"emmcbootpart=1\0" \
-	"emmcdev=0\0" \
-	"emmcfinduuid=part uuid mmc ${emmcdev}:${emmcrootpart} uuid\0" \
-	"emmcrootpart=2\0"
-
-
 #define MEM_LAYOUT_ENV_SETTINGS \
 	"bootm_size=0x10000000\0" \
 	"fdt_addr_r=0x82000000\0" \
@@ -73,28 +55,6 @@
 	"pxefile_addr_r=0x87100000\0" \
 	"ramdisk_addr_r=0x82100000\0" \
 	"scriptaddr=0x87000000\0"
-
-#if defined(CONFIG_TARGET_COLIBRI_IMX7_NAND)
-#define SD_BOOTDEV 0
-#elif defined(CONFIG_TARGET_COLIBRI_IMX7_EMMC)
-#define SD_BOOTDEV 1
-#endif
-
-#define SD_BOOTCMD \
-	"set_sdargs=setenv sdargs root=PARTUUID=${uuid} ro rootwait\0" \
-	"sdboot=run setup; run sdfinduuid; run set_sdargs; " \
-	"setenv bootargs ${defargs} ${sdargs} " \
-	"${setupargs} ${vidargs}; echo Booting from MMC/SD card...; " \
-	"run m4boot && " \
-	"load mmc ${sddev}:${sdbootpart} ${kernel_addr_r} ${kernel_file} && " \
-	"load mmc ${sddev}:${sdbootpart} ${fdt_addr_r} " \
-	"${soc}-colibri-${fdt_board}.dtb && " \
-	"run fdt_fixup && bootz ${kernel_addr_r} - ${fdt_addr_r}\0" \
-	"sdbootpart=1\0" \
-	"sddev=" __stringify(SD_BOOTDEV) "\0" \
-	"sdfinduuid=part uuid mmc ${sddev}:${sdrootpart} uuid\0" \
-	"sdrootpart=2\0"
-
 
 #define NFS_BOOTCMD \
 	"nfsargs=ip=:::::eth0: root=/dev/nfs\0" \
@@ -123,11 +83,10 @@
 	"mtdparts=" CONFIG_MTDPARTS_DEFAULT "\0" \
 	UBI_BOOTCMD
 #elif defined(CONFIG_TARGET_COLIBRI_IMX7_EMMC)
-#define CONFIG_BOOTCOMMAND "run emmcboot ; echo ; echo emmcboot failed ; " \
+#define CONFIG_BOOTCOMMAND "" \
 	"setenv fdtfile ${soc}-colibri-emmc-${fdt_board}.dtb && run distro_bootcmd;"
 #define MODULE_EXTRA_ENV_SETTINGS \
-	"variant=-emmc\0" \
-	EMMC_BOOTCMD
+	"variant=-emmc\0"
 #endif
 
 #if defined(CONFIG_TARGET_COLIBRI_IMX7_NAND)
@@ -137,8 +96,8 @@
 	func(DHCP, dhcp, na)
 #elif defined(CONFIG_TARGET_COLIBRI_IMX7_EMMC)
 #define BOOT_TARGET_DEVICES(func) \
-	func(MMC, mmc, 0) \
 	func(MMC, mmc, 1) \
+	func(MMC, mmc, 0) \
 	func(USB, usb, 0) \
 	func(DHCP, dhcp, na)
 #endif
@@ -148,7 +107,6 @@
 	BOOTENV \
 	MEM_LAYOUT_ENV_SETTINGS \
 	NFS_BOOTCMD \
-	SD_BOOTCMD \
 	MODULE_EXTRA_ENV_SETTINGS \
 	"boot_file=zImage\0" \
 	"bootubipart=ubi\0" \
