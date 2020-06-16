@@ -610,7 +610,7 @@ static int write_tag(u8 *config_block, int *offset, int tag_id,
 	tag->id = tag_id;
 	tag->flags = TAG_FLAG_VALID;
 	/* len is provided as number of 32bit values after the tag */
-	tag->len = tag_data_size / sizeof(u32);
+	tag->len = (tag_data_size + sizeof(u32) - 1) / sizeof(u32);
 	*offset += sizeof(struct toradex_tag);
 	if (tag_data && tag_data_size) {
 		memcpy(config_block + *offset, tag_data,
