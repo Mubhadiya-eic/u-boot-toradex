@@ -1,6 +1,6 @@
 // SPDX-License-Identifier:	GPL-2.0+
 /*
- * Copyright 2019 Toradex
+ * Copyright 2019-2020 Toradex
  */
 
 #include <common.h>
@@ -72,9 +72,9 @@ int dram_init(void)
 {
 	/* rom_pointer[1] contains the size of TEE occupies */
 	if (rom_pointer[1])
-		gd->ram_size = PHYS_SDRAM_SIZE - rom_pointer[1];
+		gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE) - rom_pointer[1];
 	else
-		gd->ram_size = PHYS_SDRAM_SIZE;
+		gd->ram_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE);
 
 	return 0;
 }
