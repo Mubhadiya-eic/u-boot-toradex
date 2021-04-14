@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: GPL-2.0+
+
+variables:
+# uncomment for the pipeline debug purpose
+# CI_DEBUG_TRACE: "true"
+  CI_IMAGE: gitlab.int.toradex.com:4567/philippe.schenker/u-boot-toradex:bionic-20200112-21Feb2020
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  GIT_STRATEGY: fetch
+  GIT_DEPTH: "1"
+
+# Grab our configured image.  The source for this is found at:
+# https://gitlab.denx.de/u-boot/gitlab-ci-runner
+image: $CI_IMAGE
+
+# We run some tests in different order, to catch some failures quicker.
+stages:
+  - all-in-one-stage
+
+.buildman_and_testpy_template: &buildman_and_testpy_dfn
+  tags: [ 'all' ]
+  stage: all-in-one-stage
+  before_script:
+    # Clone uboot-test-hooks
+    - git clone --depth=1 git://github.com/swarren/uboot-test-hooks.git /tmp/uboot-test-hooks
+    - ln -s travis-ci /tmp/uboot-test-hooks/bin/`hostname`
+    - ln -s travis-ci /tmp/uboot-test-hooks/py/`hostname`
+    - grub-mkimage --prefix="" -o ~/grub_x86.efi -O i386-efi normal  echo lsefimmap lsefi lsefisystab efinet tftp minicmd
+    - grub-mkimage --prefix="" -o ~/grub_x64.efi -O x86_64-efi normal  echo lsefimmap lsefi lsefisystab efinet tftp minicmd
+    - cp /opt/grub/grubriscv64.efi ~/grub_riscv64.efi
+    - cp /opt/grub/grubaa64.efi ~/grub_arm64.efi
+    - cp /opt/grub/grubarm.efi ~/grub_arm.efi
+
+  after_script:
+    - rm -rf /tmp/uboot-test-hooks /tmp/venv
+  script:
+    # From buildman, exit code 129 means warnings only.  If we've been asked to
+    # use clang only do one configuration.
+    - if [[ "${BUILDMAN}" != "" ]]; then
+        ret=0;
+        tools/buildman/buildman -o /tmp -P -E ${BUILDMAN} ${OVERRIDE}|| ret=$?;
+        if [[ $ret -ne 0 && $ret -ne 129 ]]; then
+          tools/buildman/buildman -o /tmp -sdeP ${BUILDMAN};
+          exit $ret;
+        fi;
+      fi
+    # "not a_test_which_does_not_exist" is a dummy -k parameter which will
+    # never prevent any test from running. That way, we can always pass
+    # "-k something" even when $TEST_PY_TEST_SPEC doesnt need a custom
+    # value.
+    - virtualenv -p /usr/bin/python3 /tmp/venv
+    - . /tmp/venv/bin/activate
+    - pip install -r test/py/requirements.txt
+    - export UBOOT_TRAVIS_BUILD_DIR=/tmp/.bm-work/${TEST_PY_BD};
+      export PATH=/opt/qemu/bin:/tmp/uboot-test-hooks/bin:${PATH};
+      export PYTHONPATH=/tmp/uboot-test-hooks/py/travis-ci;
+      if [[ "${TEST_PY_BD}" != "" ]]; then
+        ./test/py/test.py --bd ${TEST_PY_BD} ${TEST_PY_ID}
+          -k "${TEST_PY_TEST_SPEC:-not a_test_which_does_not_exist}"
+          --build-dir "$UBOOT_TRAVIS_BUILD_DIR";
+        ret=$?;
+        if [[ $ret -ne 0 ]]; then
+          exit $ret;
+        fi;
+      fi;
+
+build all 64bit Toradex boards:
+  tags: [ 'all' ]
+  stage: all-in-one-stage
+  variables:
+    ARCH: arm64
+    CROSS_COMPILE: /opt/gcc-7.3.0-nolibc/aarch64-linux/bin/aarch64-linux-
+    TARGETS: "apalis-imx8 apalis-imx8x colibri-imx8qxp verdin-imx8mm"
+  script: |
+    for TARGET in $TARGETS; do
+      echo -ne "#\n#\n#\n#\n#\n#\n# Building ${TARGET}\n#\n#\n#\n#\n#\n#\n"
+      make "${TARGET}_defconfig"
+      make -j$(nproc) u-boot.bin || ret=$?
+      if [[ $ret -ne 0 && $ret -ne 129 ]]; then
+        exit $ret
+      fi
+    done
+
+# QA jobs for code analytics
+# static code analysis with cppcheck (we can add --enable=all later)
+cppcheck:
+  tags: [ 'all' ]
+  stage: all-in-one-stage
+  script:
+    - cppcheck --force --quiet --inline-suppr .
+
+
