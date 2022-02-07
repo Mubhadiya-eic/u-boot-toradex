@@ -1282,9 +1282,6 @@ void devm_gpiod_put(struct udevice *dev, struct gpio_desc *desc)
 
 static int gpio_post_bind(struct udevice *dev)
 {
-	struct udevice *child;
-	ofnode node;
-
 #if defined(CONFIG_NEEDS_MANUAL_RELOC)
 	struct dm_gpio_ops *ops = (struct dm_gpio_ops *)device_get_ops(dev);
 	static int reloc_done;
@@ -1315,7 +1312,10 @@ static int gpio_post_bind(struct udevice *dev)
 	}
 #endif
 
-	if (IS_ENABLED(CONFIG_GPIO_HOG)) {
+	if (CONFIG_IS_ENABLED(GPIO_HOG)) {
+		struct udevice *child;
+		ofnode node;
+
 		dev_for_each_subnode(node, dev) {
 			if (ofnode_read_bool(node, "gpio-hog")) {
 				const char *name = ofnode_get_name(node);
