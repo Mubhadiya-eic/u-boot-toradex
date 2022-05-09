@@ -17,6 +17,7 @@
 #include <env.h>
 #include <errno.h>
 #include <linux/libfdt.h>
+#include <linux/bitops.h>
 #include <mmc.h>
 
 #include <power-domain.h>
@@ -44,10 +45,21 @@ DECLARE_GLOBAL_DATA_PTR;
 				 (SC_PAD_28FDSOI_PS_PD << PADRING_PULL_SHIFT) | \
 				 (SC_PAD_28FDSOI_DSE_DV_HIGH << PADRING_DSE_SHIFT))
 
+#define TDX_USER_FUSE_BLOCK1_A	276
+#define TDX_USER_FUSE_BLOCK1_B	277
+#define TDX_USER_FUSE_BLOCK2_A	278
+#define TDX_USER_FUSE_BLOCK2_B	279
+
 typedef enum {
 	PCB_VERSION_1_0,
 	PCB_VERSION_1_1
 } pcb_rev_t;
+
+struct tdx_user_fuses {
+	uint16_t pid4;
+	uint16_t vers;
+	uint8_t ramid;
+};
 
 static iomux_cfg_t pcb_vers_detect[] = {
 	SC_P_MIPI_DSI0_GPIO0_00 | MUX_MODE_ALT(3) | MUX_PAD_CTRL(PCB_VERS_DETECT),
@@ -69,12 +81,54 @@ static void setup_iomux_uart(void)
 	imx8_iomux_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
 }
 
+static uint32_t do_get_tdx_user_fuse(int a, int b)
+{
+	sc_err_t sciErr;
+	uint32_t val_a = 0;
+	uint32_t val_b = 0;
+
+	sciErr = sc_misc_otp_fuse_read(-1, a, &val_a);
+	if (sciErr != SC_ERR_NONE) {
+		printf("Error reading out user fuse %d\n", a);
+		return 0;
+	}
+
+	sciErr = sc_misc_otp_fuse_read(-1, b, &val_b);
+	if (sciErr != SC_ERR_NONE) {
+		printf("Error reading out user fuse %d\n", b);
+		return 0;
+	}
+
+	return ((val_a & 0xffff) << 16) | (val_b & 0xffff);
+}
+
+static void get_tdx_user_fuse(struct tdx_user_fuses* tdxuserfuse)
+{
+	uint32_t fuse_block;
+
+	fuse_block = do_get_tdx_user_fuse(TDX_USER_FUSE_BLOCK2_A,
+					  TDX_USER_FUSE_BLOCK2_B);
+
+	/*
+	 * Fuse block 2 acts as a backup area, if this reads 0 we want to
+	 * use fuse block 1
+	 */
+	if (fuse_block == 0)
+		fuse_block = do_get_tdx_user_fuse(TDX_USER_FUSE_BLOCK1_A,
+						  TDX_USER_FUSE_BLOCK1_B);
+
+	tdxuserfuse->pid4 = (fuse_block >> 18) & GENMASK(13, 0);
+	tdxuserfuse->vers = (fuse_block >> 4) & GENMASK(13, 0);
+	tdxuserfuse->ramid = fuse_block & GENMASK(3, 0);
+}
+
 void board_mem_get_layout(uint64_t *phys_sdram_1_start,
 			  uint64_t *phys_sdram_1_size,
 			  uint64_t *phys_sdram_2_start,
 			  uint64_t *phys_sdram_2_size)
 {
 	uint32_t is_quadplus = 0, val = 0;
+	struct tdx_user_fuses tdxramfuses;
 	sc_err_t sciErr = sc_misc_otp_fuse_read(-1, 6, &val);
 
 	if (sciErr == SC_ERR_NONE) {
@@ -82,14 +136,33 @@ void board_mem_get_layout(uint64_t *phys_sdram_1_start,
 		is_quadplus = ((val >> 4) & 0x3) != 0x0;
 	}
 
+	get_tdx_user_fuse(&tdxramfuses);
+
 	*phys_sdram_1_start = PHYS_SDRAM_1;
 	*phys_sdram_1_size = PHYS_SDRAM_1_SIZE;
 	*phys_sdram_2_start = PHYS_SDRAM_2;
-	if (is_quadplus)
-		/* Our QP based SKUs only have 2 GB RAM (PHYS_SDRAM_1_SIZE) */
+
+	switch (tdxramfuses.ramid) {
+	case 1:
+		*phys_sdram_2_size = SZ_2G;
+		break;
+	case 2:
 		*phys_sdram_2_size = 0x0UL;
-	else
-		*phys_sdram_2_size = PHYS_SDRAM_2_SIZE;
+		break;
+	case 3:
+		*phys_sdram_2_size = SZ_2G;
+		break;
+	case 4:
+		*phys_sdram_2_size = SZ_4G + SZ_2G;
+		break;
+	default:
+		if (is_quadplus)
+			/* Our QP based SKUs only have 2 GB RAM (PHYS_SDRAM_1_SIZE) */
+			*phys_sdram_2_size = 0x0UL;
+		else
+			*phys_sdram_2_size = PHYS_SDRAM_2_SIZE;
+		break;
+	}
 }
 
 int board_early_init_f(void)
