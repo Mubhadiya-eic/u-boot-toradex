@@ -107,6 +107,14 @@
 	assigned-clock-rates = <786432000>, <722534400>;
 };
 
+&cpu_alert0 {
+	temperature = <95000>;
+};
+
+&cpu_crit0 {
+	temperature = <105000>;
+};
+
 &fec1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_fec1>;
