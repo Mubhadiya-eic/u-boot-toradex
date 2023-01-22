@@ -1,0 +1,173 @@
+// SPDX-License-Identifier: GPL-2.0-or-later OR MIT
+/*
+ * Copyright 2023 Toradex
+ */
+
+/ {
+	aliases {
+		eeprom0 = &eeprom_module;
+		eeprom1 = &eeprom_carrier_board;
+		eeprom2 = &eeprom_display_adapter;
+		usb0 = &usb0;
+	};
+
+	chosen {
+		tick-timer = &timer1;
+	};
+
+	memory@80000000 {
+		u-boot,dm-spl;
+	};
+};
+
+&cbass_main {
+	u-boot,dm-spl;
+
+	timer1: timer@2400000 {
+		compatible = "ti,omap5430-timer";
+		reg = <0x00 0x2400000 0x00 0x80>;
+		clock-frequency = <25000000>;
+		ti,timer-alwon;
+		u-boot,dm-spl;
+	};
+};
+
+&cbass_mcu {
+	u-boot,dm-spl;
+};
+
+&cbass_wakeup {
+	u-boot,dm-spl;
+};
+
+&chipid {
+	u-boot,dm-spl;
+};
+
+&cpsw3g {
+	reg = <0x0 0x8000000 0x0 0x200000>,
+	      <0x0 0x43000200 0x0 0x8>;
+	reg-names = "cpsw_nuss", "mac_efuse";
+	/delete-property/ ranges;
+	u-boot,dm-spl;
+
+	cpsw-phy-sel@04044 {
+		compatible = "ti,am64-phy-gmii-sel";
+		reg = <0x0 0x00104044 0x0 0x8>;
+		u-boot,dm-spl;
+	};
+};
+
+&cpsw3g_phy0 {
+	u-boot,dm-spl;
+};
+
+&cpsw_port1 {
+	u-boot,dm-spl;
+};
+
+&cpsw_port2 {
+	status = "disabled";
+};
+
+&dmsc {
+	u-boot,dm-spl;
+
+	k3_sysreset: sysreset-controller {
+		compatible = "ti,sci-sysreset";
+		u-boot,dm-spl;
+	};
+};
+
+&dmss {
+	u-boot,dm-spl;
+};
+
+#ifdef SKEVM
+&exp1 {
+	u-boot,dm-spl;
+};
+#endif
+
+&k3_clks {
+	u-boot,dm-spl;
+};
+
+&k3_pds {
+	u-boot,dm-spl;
+};
+
+&k3_reset {
+	u-boot,dm-spl;
+};
+
+&main_bcdma {
+	u-boot,dm-spl;
+};
+
+&main_gpio0 {
+	u-boot,dm-spl;
+};
+
+&main_pktdma {
+	u-boot,dm-spl;
+};
+
+&main_pmx0 {
+	u-boot,dm-spl;
+};
+
+&main_uart0 {
+	u-boot,dm-spl;
+};
+
+&pinctrl_mdio {
+	u-boot,dm-spl;
+};
+
+&pinctrl_rgmii1 {
+	u-boot,dm-spl;
+};
+
+&pinctrl_sdhci1 {
+	u-boot,dm-spl;
+};
+
+&pinctrl_uart0 {
+	u-boot,dm-spl;
+};
+
+&reg_sdhc1_vmmc {
+	u-boot,dm-spl;
+};
+
+&reg_sdhc1_vqmmc {
+	u-boot,dm-spl;
+};
+
+&sdhci0 {
+	u-boot,dm-spl;
+};
+
+&sdhci1 {
+	u-boot,dm-spl;
+};
+
+&secure_proxy_main {
+	u-boot,dm-spl;
+};
+
+&usbss0 {
+	u-boot,dm-spl;
+};
+
+&usb0 {
+	/* Since role switching is not supported in U-Boot */
+	/delete-property/ extcon;
+	dr_mode = "peripheral";
+	u-boot,dm-spl;
+};
+
+&wkup_conf {
+	u-boot,dm-spl;
+};
