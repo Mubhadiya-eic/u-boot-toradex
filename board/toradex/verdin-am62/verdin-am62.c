@@ -13,15 +13,41 @@
 #include <dm/uclass.h>
 #include <env.h>
 #include <fdt_support.h>
+#include <i2c.h>
 #include <k3-ddrss.h>
+#include <power/tps65219.h>
 #include <spl.h>
 
 #include "../common/tdx-cfg-block.h"
 
 DECLARE_GLOBAL_DATA_PTR;
 
+#define PMIC_I2C_BUS		0x0
+#define PMIC_I2C_ADDRESS	0x30
+#define PMIC_BUCK1_VSET_850	0xa
+
 int board_init(void)
 {
+	struct udevice *dev;
+	u8 addr, data[1];
+	int err;
+
+	/* Set PMIC Buck1 aka +VDD_CORE to 850 mV */
+	err = i2c_get_chip_for_busnum(PMIC_I2C_BUS, PMIC_I2C_ADDRESS, 1, &dev);
+	if (err) {
+		printf("%s: Cannot find PMIC I2C chip (err=%d)\n", __func__, err);
+	} else {
+		addr = TPS65219_BUCK1_VOUT_REG;
+		err = dm_i2c_read(dev, addr, data, 1);
+		if (err)
+			debug("failed to get TPS65219_BUCK1_VOUT_REG (err=%d)\n", err);
+		data[0] &= ~TPS65219_VOLT_MASK;
+		data[0] |= PMIC_BUCK1_VSET_850;
+		err = dm_i2c_write(dev, addr, data, 1);
+		if (err)
+			debug("failed to set TPS65219_BUCK1_VOUT_REG (err=%d)\n", err);
+	}
+
 	return 0;
 }
 
