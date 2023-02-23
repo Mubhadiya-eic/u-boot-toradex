@@ -83,12 +83,6 @@
 	u-boot,dm-spl;
 };
 
-#ifdef SKEVM
-&exp1 {
-	u-boot,dm-spl;
-};
-#endif
-
 &k3_clks {
 	u-boot,dm-spl;
 };
