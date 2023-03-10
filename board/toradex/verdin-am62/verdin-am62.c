@@ -22,15 +22,6 @@
 
 DECLARE_GLOBAL_DATA_PTR;
 
-/* from 5.8 Boot Memory Maps */
-#define BOOT_PARAMETER_TABLE 0x43c3f298
-/* from 5.6.1 Common Header */
-#define BOOT_PARAMETER_PRIMARY_PERIPHERAL (*(u16 *)(BOOT_PARAMETER_TABLE + 0x04))
-#define BOOT_PARAMETER_SECONDARY_PERIPHERAL (*(u16 *)(BOOT_PARAMETER_TABLE + 0x204))
-#define BOOT_PARAMETER_EMMC 101
-#define BOOT_PARAMETER_SD 100
-#define BOOT_PARAMETER_USB_DFU 70
-
 #define PMIC_I2C_BUS		0x0
 #define PMIC_I2C_ADDRESS	0x30
 #define PMIC_BUCK1_VSET_850	0xa
@@ -135,42 +126,6 @@ int ft_board_setup(void *blob, struct bd_info *bd)
 }
 #endif
 
-#if !defined(CONFIG_SPL_BUILD)
-/* Should check if we were booted over dfu, and if so go to DFU / UMS for download */
-void decide_on_dfu(void)
-{
-	/*
-	 * SD boot with sdcard,		7000f290: 00000000
-	 * SD boot without sdcard, dfu,	7000f290: 00000001
-	 * eMMC Boot, eMMC flashed	7000f290: 00000000
-	 * eMMC Boot, eMMC zeroed	7000f290: 00000001
-	 * DFU Boot			7000f290: 00000000
-	 *
-	 * If this Memory location will stay untouched in future versions is
-	 * unknown, so the code might break.
-	 * Compare with arch/arm/mach-k3/am625_init.c which however is SPL only
-	 */
-	u32 bootindex = *(u32 *)(CONFIG_SYS_K3_BOOT_PARAM_TABLE_INDEX);
-	u32 bootmode = bootindex & 1 ? BOOT_PARAMETER_SECONDARY_PERIPHERAL :
-				       BOOT_PARAMETER_PRIMARY_PERIPHERAL;
-
-	if (bootmode == BOOT_PARAMETER_USB_DFU) {
-		printf("DFU boot mode detected, going to DFU again for further downloads\n");
-		env_set("bootcmd", "setenv dfu_alt_info $dfu_alt_info_emmc;"
-				   "dfu 0 mmc 0; ums 0 mmc 0");
-	}
-
-	debug("Booting from %s boot device\n", bootindex & 1 ? "Secondary" :
-							       "Primary");
-	debug("Primary boot device as read from boot parameters %hd\n",
-	      BOOT_PARAMETER_PRIMARY_PERIPHERAL);
-	debug("Secondary boot device as read from boot parameters %hd\n",
-	      BOOT_PARAMETER_SECONDARY_PERIPHERAL);
-}
-#else
-void decide_on_dfu(void) {}
-#endif /* CONFIG_SPL_BUILD */
-
 static void select_dt_from_module_version(void)
 {
 	char variant[32];
@@ -199,9 +154,6 @@ static void select_dt_from_module_version(void)
 int board_late_init(void)
 {
 	select_dt_from_module_version();
-
-	/* set bootcmd to start DFU and then UMS mode if booted from DFU */
-	decide_on_dfu();
 
 	return 0;
 }
