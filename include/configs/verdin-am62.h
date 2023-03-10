@@ -8,10 +8,11 @@
 #ifndef __CONFIG_VERDIN_AM62_H
 #define __CONFIG_VERDIN_AM62_H
 
-#include <environment/ti/k3_dfu.h>
 #include <linux/sizes.h>
 
 #define CONFIG_LOADADDR			0x88200000
+#define RAMDISK_ADDR_R			0x90300000
+#define SCRIPTADDR			0x90280000
 
 /* DDR Configuration */
 #define CONFIG_SYS_SDRAM_BASE1		0x880000000
@@ -55,8 +56,8 @@
 	"kernel_addr_r=" __stringify(CONFIG_LOADADDR) "\0" \
 	"kernel_comp_addr_r=0x80200000\0" \
 	"kernel_comp_size=0x08000000\0" \
-	"ramdisk_addr_r=0x90300000\0" \
-	"scriptaddr=0x90280000\0"
+	"ramdisk_addr_r=" __stringify(RAMDISK_ADDR_R) "\0" \
+	"scriptaddr=" __stringify(SCRIPTADDR) "\0"
 
 /* Enable Distro Boot */
 #define BOOT_TARGET_DEVICES(func) \
@@ -66,8 +67,12 @@
 #include <config_distro_bootcmd.h>
 
 #define EXTRA_ENV_DFUARGS \
-	DFU_ALT_INFO_EMMC \
-	DFU_ALT_INFO_RAM
+	"dfu_alt_info_ram=" \
+	"tispl.bin ram 0x80080000 0x200000;" \
+	"u-boot.img ram 0x81000000 0x400000;" \
+	"loadaddr ram " __stringify(CONFIG_LOADADDR) " 0x80000;" \
+	"scriptaddr ram " __stringify(SCRIPTADDR) " 0x80000;" \
+	"ramdisk_addr_r ram " __stringify(RAMDISK_ADDR_R) " 0x8000000\0"
 
 /* Initial environment variables */
 #define CONFIG_EXTRA_ENV_SETTINGS \
