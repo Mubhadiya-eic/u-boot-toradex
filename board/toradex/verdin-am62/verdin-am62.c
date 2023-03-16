@@ -226,6 +226,18 @@ void spl_board_init(void)
 	writel(val, CTRLMMR_USB1_PHY_CTRL);
 
 	/* We use the 32k FOUT from the Epson RX8130CE RTC chip */
+	/* In WKUP_LFOSC0 clear the power down bit and set the bypass bit
+	 * The bypass bit is required as we provide a CMOS clock signal and
+	 * the power down seems to be required also in the bypass case
+	 * despite of the datasheet stating otherwise
+	 */
+	/* Compare with the AM62 datasheet,
+	 * Table 7-21. LFXOSC Modes of Operation
+	 */
+	val = readl(MCU_CTRL_LFXOSC_CTRL);
+	val &= ~MCU_CTRL_LFXOSC_32K_DISABLE_VAL;
+	val |= MCU_CTRL_LFXOSC_32K_BYPASS_VAL;
+	writel(val, MCU_CTRL_LFXOSC_CTRL);
 	/* Make sure to mux up to take the SoC 32k from the LFOSC input */
 	writel(MCU_CTRL_DEVICE_CLKOUT_LFOSC_SELECT_VAL,
 	       MCU_CTRL_DEVICE_CLKOUT_32K_CTRL);
