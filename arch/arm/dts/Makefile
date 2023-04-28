@@ -1000,7 +1000,7 @@ dtb-$(CONFIG_SOC_K3_AM625) += k3-am625-sk.dtb \
 			      k3-am62x-lp-sk.dtb \
 			      k3-am62x-r5-lp-sk.dtb
 
-dtb-$(CONFIG_SOC_K3_AM625) += k3-am625-verdin.dtb \
+dtb-$(CONFIG_SOC_K3_AM625) += k3-am625-verdin-wifi-dev.dtb \
 			      k3-am625-verdin-r5.dtb
 
 dtb-$(CONFIG_SOC_K3_AM62A7) += k3-am62a7-sk.dtb \

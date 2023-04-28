@@ -103,6 +103,32 @@
 	u-boot,dm-spl;
 };
 
+/* On-module I2C - PMIC_I2C */
+&main_i2c0 {
+	eeprom_module: eeprom@50 {
+		compatible = "i2c-eeprom";
+		pagesize = <16>;
+		reg = <0x50>;
+	};
+};
+
+/* Verdin I2C_1 */
+&main_i2c1 {
+	/* EEPROM on display adapter (MIPI DSI Display Adapter) */
+	eeprom_display_adapter: eeprom@50 {
+		compatible = "i2c-eeprom";
+		reg = <0x50>;
+		pagesize = <16>;
+	};
+
+	/* EEPROM on carrier board */
+	eeprom_carrier_board: eeprom@57 {
+		compatible = "i2c-eeprom";
+		reg = <0x57>;
+		pagesize = <16>;
+	};
+};
+
 &main_pktdma {
 	u-boot,dm-spl;
 };
