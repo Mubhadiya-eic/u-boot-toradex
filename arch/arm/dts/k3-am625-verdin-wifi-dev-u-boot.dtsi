@@ -45,6 +45,12 @@
 };
 
 &cpsw3g {
+	/* U-Boot does not support pinctrls in the cpsw3g_midio node so we just add them all here */
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_eth_clock
+		     &pinctrl_mdio
+		     &pinctrl_rgmii1
+		     &pinctrl_rgmii2>;
 	reg = <0x0 0x8000000 0x0 0x200000>,
 	      <0x0 0x43000200 0x0 0x8>;
 	reg-names = "cpsw_nuss", "mac_efuse";
@@ -59,6 +65,13 @@
 };
 
 &cpsw3g_phy0 {
+	/* U-Boot currently does not support reset-gpios so we just hog it */
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_eth_int>;
+	u-boot,dm-spl;
+};
+
+&cpsw3g_phy1 {
 	u-boot,dm-spl;
 };
 
@@ -67,7 +80,7 @@
 };
 
 &cpsw_port2 {
-	status = "disabled";
+	u-boot,dm-spl;
 };
 
 &dmsc {
@@ -80,6 +93,10 @@
 };
 
 &dmss {
+	u-boot,dm-spl;
+};
+
+&fss {
 	u-boot,dm-spl;
 };
 
@@ -101,6 +118,15 @@
 
 &main_gpio0 {
 	u-boot,dm-spl;
+
+	reset-ethphy {
+		gpio-hog;
+		gpios = <17 GPIO_ACTIVE_HIGH>;
+		line-name = "reset_ethphy";
+		output-high;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_eth_reset>;
+	};
 };
 
 /* On-module I2C - PMIC_I2C */
@@ -141,11 +167,43 @@
 	u-boot,dm-spl;
 };
 
+&mcu_pmx0 {
+	u-boot,dm-spl;
+};
+
+&pinctrl_eth_clock {
+	u-boot,dm-spl;
+};
+
+&pinctrl_eth_int {
+	u-boot,dm-spl;
+};
+
+&pinctrl_eth_reset {
+	u-boot,dm-spl;
+};
+
+&pinctrl_eth2_rgmii_int {
+	u-boot,dm-spl;
+};
+
+&pinctrl_i2c0 {
+	u-boot,dm-spl;
+};
+
+&pinctrl_i2c1 {
+	u-boot,dm-spl;
+};
+
 &pinctrl_mdio {
 	u-boot,dm-spl;
 };
 
 &pinctrl_rgmii1 {
+	u-boot,dm-spl;
+};
+
+&pinctrl_rgmii2 {
 	u-boot,dm-spl;
 };
 
@@ -189,5 +247,9 @@
 };
 
 &wkup_conf {
+	u-boot,dm-spl;
+};
+
+&wkup_uart0 {
 	u-boot,dm-spl;
 };
