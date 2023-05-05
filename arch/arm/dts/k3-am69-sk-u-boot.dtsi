@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * Copyright (C) 2022 Texas Instruments Incorporated - https://www.ti.com/
+ * Copyright (C) 2022-2023 Texas Instruments Incorporated - https://www.ti.com/
  */
 
 / {
@@ -13,13 +13,14 @@
 		serial0 = &wkup_uart0;
 		serial1 = &mcu_uart0;
 		serial2 = &main_uart8;
+		mmc0 = &main_sdhci0;
+		mmc1 = &main_sdhci1;
 		i2c0 = &wkup_i2c0;
 		i2c1 = &mcu_i2c0;
 		i2c2 = &mcu_i2c1;
 		i2c3 = &main_i2c0;
 		ethernet0 = &mcu_cpsw_port1;
 		spi0 = &ospi0;
-		spi1 = &ospi1;
 	};
 };
 
@@ -112,6 +113,7 @@
 &main_usbss0_pins_default {
 	u-boot,dm-spl;
 };
+
 &wkup_pmx0 {
 	u-boot,dm-spl;
 };
@@ -152,6 +154,7 @@
 	dr_mode = "peripheral";
 	u-boot,dm-spl;
 };
+
 &mcu_cpsw {
 	reg = <0x0 0x46000000 0x0 0x200000>,
 	      <0x0 0x40f00200 0x0 0x8>;
@@ -166,10 +169,6 @@
 };
 
 &mcu_fss0_ospi0_pins_default {
-	u-boot,dm-spl;
-};
-
-&mcu_fss0_ospi1_pins_default {
 	u-boot,dm-spl;
 };
 
@@ -193,14 +192,6 @@
 			reg = <0x3fc0000 0x40000>;
 			u-boot,dm-spl;
 		};
-	};
-};
-
-&ospi1 {
-	u-boot,dm-spl;
-
-	flash@0 {
-		u-boot,dm-spl;
 	};
 };
 

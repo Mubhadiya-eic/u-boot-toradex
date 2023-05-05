@@ -13,10 +13,55 @@
 #include <config_distro_bootcmd.h>
 #include <environment/ti/mmc.h>
 #include <environment/ti/k3_dfu.h>
+#include <environment/ti/k3_rproc.h>
 
 /* DDR Configuration */
 #define CONFIG_SYS_SDRAM_BASE1		0x880000000
 #define CONFIG_SYS_BOOTM_LEN            SZ_64M
+
+/* NAND support */
+
+/* NAND Device Configuration : MT29F8G08ADAFAH4 chip */
+#define CONFIG_SYS_NAND_PAGE_SIZE	4096
+#define CONFIG_SYS_NAND_OOBSIZE		256
+#define CONFIG_SYS_NAND_BLOCK_SIZE      SZ_256K
+#define CONFIG_SYS_NAND_PAGE_COUNT	(CONFIG_SYS_NAND_BLOCK_SIZE / \
+					 CONFIG_SYS_NAND_PAGE_SIZE)
+#define CONFIG_SYS_NAND_5_ADDR_CYCLE
+
+/* NAND Driver config */
+#define CONFIG_SPL_NAND_INIT	1
+#define CONFIG_SYS_NAND_ONFI_DETECTION
+#define CONFIG_NAND_OMAP_ECCSCHEME      OMAP_ECC_BCH8_CODE_HW
+#define CONFIG_SYS_NAND_BAD_BLOCK_POS   NAND_LARGE_BADBLOCK_POS
+
+#define CONFIG_SYS_NAND_ECCPOS		{ 2, 3, 4, 5, 6, 7, 8, 9, \
+					 10, 11, 12, 13, 14, 15, 16, 17, \
+					 18, 19, 20, 21, 22, 23, 24, 25, \
+					 26, 27, 28, 29, 30, 31, 32, 33, \
+					 34, 35, 36, 37, 38, 39, 40, 41, \
+					 42, 43, 44, 45, 46, 47, 48, 49, \
+					 50, 51, 52, 53, 54, 55, 56, 57, }
+#define CONFIG_SYS_NAND_ECCSIZE         512
+#define CONFIG_SYS_NAND_ECCBYTES        14
+
+#ifdef CONFIG_SYS_K3_SPL_ATF
+#define CONFIG_SYS_NAND_U_BOOT_OFFS     0x200000	/* tispl.bin partition */
+#else
+#define CONFIG_SYS_NAND_U_BOOT_OFFS     0x600000	/* u-boot.img partition */
+#endif
+
+#define CONFIG_SYS_NAND_MAX_CHIPS       1
+
+#define CONFIG_SYS_MAX_NAND_DEVICE      1
+
+#define CONFIG_SYS_NAND_BASE            0x51000000
+
+#if defined(CONFIG_ENV_IS_IN_NAND)
+#define CONFIG_SYS_ENV_SECT_SIZE        CONFIG_SYS_NAND_BLOCK_SIZE
+#endif
+
+/*-- end NAND config --*/
 
 #ifdef CONFIG_SYS_K3_SPL_ATF
 #define CONFIG_SPL_FS_LOAD_PAYLOAD_NAME	"tispl.bin"
@@ -140,11 +185,70 @@
 		"run get_fdt_usb;"					\
 		"run run_kern\0"
 
+#ifdef CONFIG_TARGET_AM625_A53_EVM
+#define EXTRA_ENV_AM625_BOARD_SETTINGS_MTD				\
+	"mtdids=" CONFIG_MTDIDS_DEFAULT "\0"				\
+	"mtdparts=" CONFIG_MTDPARTS_DEFAULT "\0"
+#else
+#define EXTRA_ENV_AM625_BOARD_SETTINGS_MTD
+#endif
+
+#define EXTRA_ENV_AM625_BOARD_SETTINGS_OSPI_NAND			\
+	"nbootpart=ospi.rootfs\0"					\
+	"nbootvolume=ubi0:rootfs\0"					\
+	"bootdir=/boot\0"						\
+	"rd_spec=-\0"							\
+	"ubi_init=ubi part ${nbootpart}; ubifsmount ${nbootvolume};\0"	\
+	"args_ospi_nand=setenv bootargs console=${console} "		\
+		"${optargs} ubi.mtd=${nbootpart} "			\
+		"root=${nbootvolume} rootfstype=ubifs\0"		\
+	"init_ospi_nand=run args_all args_ospi_nand ubi_init\0"		\
+	"get_fdt_ospi_nand=ubifsload ${fdtaddr} ${bootdir}/${fdtfile};\0"	\
+	"get_overlay_ospi_nand="					\
+		"fdt address ${fdtaddr};"				\
+		"fdt resize 0x100000;"					\
+		"for overlay in $name_overlays;"			\
+		"do;"							\
+		"ubifsload ${dtboaddr} ${bootdir}/${overlay} && "	\
+		"fdt apply ${dtboaddr};"				\
+		"done;\0"						\
+	"get_kern_ospi_nand=ubifsload ${loadaddr} ${bootdir}/${name_kern}\0"	\
+	"get_fit_ospi_nand=ubifsload ${addr_fit} ${bootdir}/${name_fit}\0"
+
+#define EXTRA_ENV_AM625_BOARD_SETTINGS_NAND				\
+	"nbootpart=NAND.file-system\0"					\
+	"nbootvolume=ubi0:rootfs\0"					\
+	"bootdir=/boot\0"						\
+	"rd_spec=-\0"							\
+	"ubi_init=ubi part ${nbootpart}; ubifsmount ${nbootvolume};\0"	\
+	"args_nand=setenv bootargs console=${console} "			\
+		"${optargs} ubi.mtd=${nbootpart} "			\
+		"root=${nbootvolume} rootfstype=ubifs\0"			\
+	"init_nand=run args_all args_nand ubi_init\0"			\
+	"get_fdt_nand=ubifsload ${fdtaddr} ${bootdir}/${fdtfile};\0"	\
+	"get_overlay_nand="						\
+		"fdt address ${fdtaddr};"				\
+		"fdt resize 0x100000;"					\
+		"for overlay in $name_overlays;"			\
+		"do;"							\
+		"ubifsload ${dtboaddr} ${bootdir}/${overlay} && "	\
+		"fdt apply ${dtboaddr};"				\
+		"done;\0"						\
+	"get_kern_nand=ubifsload ${loadaddr} ${bootdir}/${name_kern}\0"	\
+	"get_fit_nand=ubifsload ${addr_fit} ${bootdir}/${name_fit}\0"
+
+#if defined(CONFIG_TARGET_AM625_A53_EVM)
+#if defined(DEFAULT_RPROCS)
+#undef DEFAULT_RPROCS
+#endif
+#define DEFAULT_RPROCS ""						\
+		"0 /lib/firmware/am62-mcu-m4f0_0-fw "
+#endif
 
 #define BOOTENV_DEV_LINUX(devtypeu, devtypel, instance) \
 	"bootcmd_linux=" \
 		"if test \"${android_boot}\" -eq 0; then;" \
-			"run findfdt; run envboot; run init_${boot};" \
+			"run findfdt; run envboot; run init_${boot}; run boot_rprocs;" \
 			"if test ${boot_fit} -eq 1; then;" \
 				"run get_fit_${boot}; run get_fit_${boot}; run get_overlaystring; run run_fit;"\
 			"else;" \
@@ -400,11 +504,17 @@
 
 #endif
 
+#ifdef CONFIG_TARGET_AM625_A53_EVM
 #define EXTRA_ENV_DFUARGS \
 	DFU_ALT_INFO_MMC \
 	DFU_ALT_INFO_EMMC \
 	DFU_ALT_INFO_RAM \
-	DFU_ALT_INFO_OSPI
+	DFU_ALT_INFO_OSPI \
+	DFU_ALT_INFO_OSPI_NAND \
+	DFU_ALT_INFO_GPMC_NAND
+#else
+#define EXTRA_ENV_DFUARGS
+#endif
 
 /* Incorporate settings into the U-Boot environment */
 #define CONFIG_EXTRA_ENV_SETTINGS					\
@@ -414,8 +524,11 @@
 	DEFAULT_MMC_TI_ARGS						\
 	EXTRA_ENV_AM625_BOARD_SETTINGS					\
 	EXTRA_ENV_AM625_BOARD_SETTINGS_MMC				\
+	EXTRA_ENV_AM625_BOARD_SETTINGS_NAND				\
 	EXTRA_ENV_DFUARGS						\
-	EXTRA_ENV_AM625_BOARD_SETTING_USBMSC
+	EXTRA_ENV_AM625_BOARD_SETTING_USBMSC				\
+	EXTRA_ENV_AM625_BOARD_SETTINGS_OSPI_NAND			\
+	EXTRA_ENV_RPROC_SETTINGS
 
 /* Now for the remaining common defines */
 #include <configs/ti_armv7_common.h>
