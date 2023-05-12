@@ -150,6 +150,8 @@ const char * const toradex_modules[] = {
 	[66] = "Verdin iMX8M Plus Quad 8GB Wi-Fi / BT",
 	[67] = "Apalis iMX8 QuadMax 8GB Wi-Fi / BT IT",
 	[68] = "Verdin iMX8M Mini Quad 2GB WB IT No CAN",
+	[69] = "UNKNOWN MODULE",
+	[70] = "Verdin iMX8M Plus Quad 8GB WB IT",
 };
 
 const char * const toradex_carrier_boards[] = {
@@ -553,7 +555,10 @@ static int get_cfgblock_interactive(void)
 			if (gd->ram_size == 0x80000000)
 				tdx_hw_tag.prodid = VERDIN_IMX8MPQ_2GB_WIFI_BT_IT;
 			else if (gd->ram_size == 0x200000000)
-				tdx_hw_tag.prodid = VERDIN_IMX8MPQ_8GB_WIFI_BT;
+				if (it == 'y' || it == 'Y')
+					tdx_hw_tag.prodid = VERDIN_IMX8MPQ_8GB_WIFI_BT_IT;
+				else
+					tdx_hw_tag.prodid = VERDIN_IMX8MPQ_8GB_WIFI_BT;
 			else
 				tdx_hw_tag.prodid = VERDIN_IMX8MPQ_WIFI_BT_IT;
 		else
