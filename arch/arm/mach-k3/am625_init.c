@@ -243,6 +243,12 @@ u32 spl_mmc_boot_mode(const u32 boot_device)
 	u32 bootmode_cfg = (devstat & MAIN_DEVSTAT_PRIMARY_BOOTMODE_CFG_MASK) >>
 			    MAIN_DEVSTAT_PRIMARY_BOOTMODE_CFG_SHIFT;
 
+	u32 bootmode = (devstat & MAIN_DEVSTAT_PRIMARY_BOOTMODE_MASK) >>
+				MAIN_DEVSTAT_PRIMARY_BOOTMODE_SHIFT;
+
+	if (bootmode == BOOT_DEVICE_EMMC)
+		return MMCSD_MODE_EMMCBOOT;
+
 	switch (boot_device) {
 	case BOOT_DEVICE_MMC1:
 		if ((bootmode_cfg & MAIN_DEVSTAT_PRIMARY_MMC_FS_RAW_MASK) >>
