@@ -231,6 +231,10 @@
 	u-boot,dm-spl;
 };
 
+&sdhci2 {
+	status = "disabled";
+};
+
 &secure_proxy_main {
 	u-boot,dm-spl;
 };
