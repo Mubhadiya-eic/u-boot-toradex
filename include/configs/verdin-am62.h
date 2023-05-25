@@ -15,6 +15,7 @@
 #define SCRIPTADDR			0x90280000
 
 /* DDR Configuration */
+#define CONFIG_SYS_SDRAM_SIZE		SZ_2G /* Maximum supported size */
 #define CONFIG_SYS_SDRAM_BASE1		0x880000000
 #define CONFIG_SYS_BOOTM_LEN		SZ_64M
 

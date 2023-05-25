@@ -14,6 +14,7 @@
 #include <env.h>
 #include <fdt_support.h>
 #include <i2c.h>
+#include <init.h>
 #include <k3-ddrss.h>
 #include <power/tps65219.h>
 #include <spl.h>
@@ -53,69 +54,14 @@ int board_init(void)
 
 int dram_init(void)
 {
-	return fdtdec_setup_mem_size_base();
-}
-
-int dram_init_banksize(void)
-{
-	return fdtdec_setup_memory_banksize();
+	gd->ram_size = get_ram_size((long *)CONFIG_SYS_SDRAM_BASE, CONFIG_SYS_SDRAM_SIZE);
+	return 0;
 }
 
 #if defined(CONFIG_SPL_LOAD_FIT)
 int board_fit_config_name_match(const char *name)
 {
 	return 0;
-}
-#endif
-
-#if IS_ENABLED(CONFIG_SPL_BUILD)
-#if IS_ENABLED(CONFIG_K3_AM64_DDRSS)
-static void fixup_ddr_driver_for_ecc(struct spl_image_info *spl_image)
-{
-	struct udevice *dev;
-	int ret;
-
-	dram_init_banksize();
-
-	ret = uclass_get_device(UCLASS_RAM, 0, &dev);
-	if (ret)
-		panic("Cannot get RAM device for ddr size fixup: %d\n", ret);
-
-	ret = k3_ddrss_ddr_fdt_fixup(dev, spl_image->fdt_addr, gd->bd);
-	if (ret)
-		printf("Error fixing up ddr node for ECC use! %d\n", ret);
-}
-#else
-static void fixup_memory_node(struct spl_image_info *spl_image)
-{
-	u64 start[CONFIG_NR_DRAM_BANKS];
-	u64 size[CONFIG_NR_DRAM_BANKS];
-	int bank;
-	int ret;
-
-	dram_init();
-	dram_init_banksize();
-
-	for (bank = 0; bank < CONFIG_NR_DRAM_BANKS; bank++) {
-		start[bank] = gd->bd->bi_dram[bank].start;
-		size[bank] = gd->bd->bi_dram[bank].size;
-	}
-
-	/* dram_init functions use SPL fdt, and we must fixup u-boot fdt */
-	ret = fdt_fixup_memory_banks(spl_image->fdt_addr, start, size,
-				     CONFIG_NR_DRAM_BANKS);
-	if (ret)
-		printf("Error fixing up memory node! %d\n", ret);
-}
-#endif
-
-void spl_perform_fixups(struct spl_image_info *spl_image)
-{
-#if IS_ENABLED(CONFIG_K3_AM64_DDRSS)
-	fixup_ddr_driver_for_ecc(spl_image);
-#else
-	fixup_memory_node(spl_image);
-#endif
 }
 #endif
 
@@ -193,8 +139,5 @@ void spl_board_init(void)
 	/* Make sure to mux up to take the SoC 32k from the LFOSC input */
 	writel(MCU_CTRL_DEVICE_CLKOUT_LFOSC_SELECT_VAL,
 	       MCU_CTRL_DEVICE_CLKOUT_32K_CTRL);
-
-	/* Init DRAM size for R5/A53 SPL */
-	dram_init_banksize();
 }
 #endif
