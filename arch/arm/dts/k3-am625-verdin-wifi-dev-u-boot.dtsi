@@ -11,7 +11,7 @@
 	};
 
 	chosen {
-		tick-timer = &timer1;
+		tick-timer = &main_timer0;
 	};
 
 	memory@80000000 {
@@ -22,11 +22,8 @@
 &cbass_main {
 	bootph-pre-ram;
 
-	timer1: timer@2400000 {
-		compatible = "ti,omap5430-timer";
-		reg = <0x00 0x2400000 0x00 0x80>;
+	timer@2400000 {
 		clock-frequency = <25000000>;
-		ti,timer-alwon;
 		bootph-pre-ram;
 	};
 };
