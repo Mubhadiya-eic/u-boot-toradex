@@ -38,10 +38,8 @@
 		serial2 = &main_uart0;
 		serial3 = &mcu_uart0;
 		serial4 = &main_uart5;
-#if 0
 		usb0 = &usb0;
 		usb1 = &usb1;
-#endif
 	};
 
 	verdin_gpio_keys: gpio-keys {
@@ -1373,7 +1371,6 @@
 	status = "disabled";
 };
 
-#if 0
 /* Verdin USB_1 */
 &usbss0 {
 	ti,vbus-divider;
@@ -1399,7 +1396,6 @@
 	dr_mode = "host";
 	status = "disabled";
 };
-#endif
 
 /* Verdin UART_2 */
 &wkup_uart0 {

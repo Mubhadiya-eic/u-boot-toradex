@@ -162,7 +162,6 @@
 	status = "okay";
 };
 
-#if 0
 /* Verdin USB_1 */
 &usbss0 {
 	status = "okay";
@@ -180,7 +179,6 @@
 &usb1 {
 	status = "okay";
 };
-#endif
 
 /* Verdin CTRL_WAKE1_MICO# */
 &verdin_gpio_keys {
