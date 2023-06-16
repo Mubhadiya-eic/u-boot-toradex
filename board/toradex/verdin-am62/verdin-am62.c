@@ -83,7 +83,10 @@ static void select_dt_from_module_version(void)
 		 * If we have a valid config block and it says we are a module with
 		 * Wi-Fi/Bluetooth make sure we use the -wifi device tree.
 		 */
-		is_wifi = (tdx_hw_tag.prodid == VERDIN_AM62Q_WIFI_BT_IT);
+		is_wifi = (tdx_hw_tag.prodid == VERDIN_AM62Q_WIFI_BT_IT) ||
+			  (tdx_hw_tag.prodid == VERDIN_AM62S_512MB_WIFI_BT_IT) ||
+			  (tdx_hw_tag.prodid == VERDIN_AM62D_1G_WIFI_BT_IT) ||
+			  (tdx_hw_tag.prodid == VERDIN_AM62Q_2G_WIFI_BT_IT);
 	}
 
 	if (is_wifi)
