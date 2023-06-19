@@ -171,6 +171,10 @@
 	u-boot,dm-spl;
 };
 
+&pinctrl_ctrl_sleep_moci {
+	u-boot,dm-spl;
+};
+
 &pinctrl_eth_clock {
 	u-boot,dm-spl;
 };
@@ -247,6 +251,10 @@
 	/* Since role switching is not supported in U-Boot */
 	/delete-property/ extcon;
 	dr_mode = "peripheral";
+	u-boot,dm-spl;
+};
+
+&verdin_ctrl_sleep_moci {
 	u-boot,dm-spl;
 };
 
