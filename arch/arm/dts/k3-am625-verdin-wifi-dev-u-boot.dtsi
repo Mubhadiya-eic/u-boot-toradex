@@ -3,6 +3,8 @@
  * Copyright 2023 Toradex
  */
 
+#include "k3-am625-verdin-wifi-dev-binman.dtsi"
+
 / {
 	aliases {
 		eeprom0 = &eeprom_module;

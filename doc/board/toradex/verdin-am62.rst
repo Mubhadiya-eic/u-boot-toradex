@@ -76,11 +76,8 @@ Build U-Boot for R5
 
     $ export ARCH=arm
     $ export CROSS_COMPILE=arm-none-linux-gnueabihf-
-    $ make verdin-am62_r5_defconfig O=/tmp/r5
-    $ make O=/tmp/r5
-    $ cd ../k3-image-gen
-    $ make SOC=am62x SBL=/tmp/r5/spl/u-boot-spl.bin SYSFW_PATH=../ti-linux-firmware/ti-sysfw/ti-fs-firmware-am62x-gp.bin
-    $ cp tiboot3-am62x-gp-evm.bin ../tiboot3.bin
+    $ make verdin-am62_r5_defconfig
+    $ make BINMAN_INDIRS=<path/to/ti-linux-firmware>
 
 Build U-Boot for A53
 --------------------
@@ -89,12 +86,10 @@ Build U-Boot for A53
 
     $ export ARCH=arm64
     $ export CROSS_COMPILE=aarch64-none-linux-gnu-
-    $ make verdin-am62_a53_defconfig O=/tmp/a53
-    $ make ATF=$PWD/../arm-trusted-firmware/build/k3/lite/release/bl31.bin TEE=$PWD/../optee_os/out/arm-plat-k3/core/tee-pager_v2.bin DM=$PWD/../ti-linux-firmware/ti-dm/am62xx/ipc_echo_testb_mcu1_0_release_strip.xer5f O=/tmp/a53
-    $ cp /tmp/a53/tispl.bin ../
-    $ cp /tmp/a53/u-boot.img ../
-
-Note: Relative paths to the artefacts are known to not work.
+    $ make verdin-am62_a53_defconfig
+    $ make BL31=<path to ATF dir>/build/k3/lite/release/bl31.bin \
+        TEE=<path to OPTEE OS dir>/out/arm-plat-k3/core/tee-pager_v2.bin \
+        BINMAN_INDIRS=<path/to/ti-linux-firmware>
 
 Flash to eMMC
 -------------
