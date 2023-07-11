@@ -409,6 +409,60 @@ int fdt_disable_node(void *blob, char *node_path)
 	return 0;
 }
 
+#if defined(CONFIG_OF_SYSTEM_SETUP)
+static int fdt_del_node_path(void *blob, const char *path)
+{
+	int rc;
+	int nodeoff;
+
+	nodeoff = fdt_path_offset(blob, path);
+	if (nodeoff < 0)
+		return 0; /* Not found, skip it */
+
+	rc = fdt_del_node(blob, nodeoff);
+	if (rc < 0)
+		printf("Unable to delete node %s, err=%s\n", path, fdt_strerror(rc));
+	else
+		debug("Deleted node %s\n", path);
+	return rc;
+}
+
+static void fdt_fixup_cores_nodes_am625(void *blob, int core_nr)
+{
+	char node_path[32];
+
+	if (core_nr < 1)
+		return;
+
+	for (; core_nr < 4; core_nr++) {
+		snprintf(node_path, sizeof(node_path), "/cpus/cpu@%d", core_nr);
+		fdt_del_node_path(blob, node_path);
+		snprintf(node_path, sizeof(node_path), "/cpus/cpu-map/cluster0/core%d", core_nr);
+		fdt_del_node_path(blob, node_path);
+		snprintf(node_path, sizeof(node_path), "/bus@f0000/watchdog@e0%d0000", core_nr);
+		fdt_del_node_path(blob, node_path);
+	}
+}
+
+static int k3_get_core_nr(void)
+{
+#if defined(CONFIG_SOC_K3_AM625)
+	u32 full_devid = readl(CTRLMMR_WKUP_JTAG_DEVICE_ID);
+	return (full_devid & JTAG_DEV_CORE_NR_MASK) >> JTAG_DEV_CORE_NR_SHIFT;
+#else
+	return -1;
+#endif
+}
+
+int ft_system_setup(void *blob, struct bd_info *bd)
+{
+	if (IS_ENABLED(CONFIG_SOC_K3_AM625))
+		fdt_fixup_cores_nodes_am625(blob, k3_get_core_nr());
+
+	return 0;
+}
+#endif
+
 #endif
 
 #ifndef CONFIG_SYSRESET
