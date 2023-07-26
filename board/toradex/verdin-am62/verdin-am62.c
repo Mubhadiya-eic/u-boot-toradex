@@ -34,6 +34,12 @@ int dram_init(void)
 	return 0;
 }
 
+/* Avoid relocated U-Boot and reserved-memory overlap on 512 MB SoM */
+phys_size_t board_get_usable_ram_top(phys_size_t total_size)
+{
+	return 0x9C000000; // 448M
+}
+
 #if defined(CONFIG_SPL_LOAD_FIT)
 int board_fit_config_name_match(const char *name)
 {
