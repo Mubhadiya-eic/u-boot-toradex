@@ -232,7 +232,7 @@ void k3_mem_init(void)
 		if (ret)
 			panic("DRAM 1 init failed: %d\n", ret);
 	}
-	spl_enable_dcache();
+	spl_enable_cache();
 }
 
 u32 spl_mmc_boot_mode(struct mmc *mmc, const u32 boot_device)

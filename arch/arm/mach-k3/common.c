@@ -480,7 +480,7 @@ void remove_fwl_configs(struct fwl_data *fwl_data, size_t fwl_data_size)
 	}
 }
 
-void spl_enable_dcache(void)
+void spl_enable_cache(void)
 {
 #if !(defined(CONFIG_SYS_ICACHE_OFF) && defined(CONFIG_SYS_DCACHE_OFF))
 	phys_addr_t ram_top = CFG_SYS_SDRAM_BASE;
@@ -501,7 +501,7 @@ void spl_enable_dcache(void)
 	      gd->arch.tlb_addr + gd->arch.tlb_size);
 	gd->relocaddr = gd->arch.tlb_addr;
 
-	dcache_enable();
+	enable_caches();
 #endif
 }
 
