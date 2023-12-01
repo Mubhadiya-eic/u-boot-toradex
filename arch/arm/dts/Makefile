@@ -1280,21 +1280,25 @@ dtb-$(CONFIG_SOC_K3_J784S4) +=	k3-am69-sk.dtb \
 dtb-$(CONFIG_SOC_K3_AM642) += k3-am642-evm.dtb \
 			      k3-am642-r5-evm.dtb \
 			      k3-am642-sk.dtb \
-			      k3-am642-r5-sk.dtb
+			      k3-am642-r5-sk.dtb \
+			      k3-am642-evm-nand.dtbo
 
 dtb-$(CONFIG_SOC_K3_AM625) += k3-am625-sk.dtb \
 			      k3-am625-r5-sk.dtb \
 			      k3-am62-lp-sk.dtb \
 			      k3-am62-r5-lp-sk.dtb \
+			      k3-am62sip-r5-sk.dtb \
 			      k3-am625-beagleplay.dtb \
 			      k3-am625-r5-beagleplay.dtb
-
 
 dtb-$(CONFIG_SOC_K3_AM625) += k3-am625-verdin-wifi-dev.dtb \
 			      k3-am625-verdin-r5.dtb
 
-dtb-$(CONFIG_SOC_K3_AM625) += k3-am62a7-sk.dtb \
+dtb-$(CONFIG_SOC_K3_AM62A7) += k3-am62a7-sk.dtb \
 			      k3-am62a7-r5-sk.dtb
+
+dtb-$(CONFIG_SOC_K3_AM62P5) += k3-am62p5-sk.dtb \
+			      k3-am62p5-r5-sk.dtb
 
 dtb-$(CONFIG_ARCH_MEDIATEK) += \
 	mt7622-rfb.dtb \

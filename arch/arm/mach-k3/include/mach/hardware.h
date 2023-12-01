@@ -37,6 +37,10 @@
 #include "j784s4_hardware.h"
 #endif
 
+#ifdef CONFIG_SOC_K3_AM62P5
+#include "am62p_hardware.h"
+#endif
+
 /* Assuming these addresses and definitions stay common across K3 devices */
 #define CTRLMMR_WKUP_JTAG_ID	(WKUP_CTRL_MMR0_BASE + 0x14)
 #define JTAG_ID_VARIANT_SHIFT	28
@@ -51,6 +55,7 @@
 #define JTAG_ID_PARTNO_AM62X	0xbb7e
 #define JTAG_ID_PARTNO_AM62AX   0xbb8d
 #define JTAG_ID_PARTNO_J784S4	0xbb80
+#define JTAG_ID_PARTNO_AM62PX	0xbb9d
 
 #define K3_SOC_ID(id, ID) \
 static inline bool soc_is_##id(void) \
@@ -67,6 +72,7 @@ K3_SOC_ID(j721s2, J721S2)
 K3_SOC_ID(am62x, AM62X)
 K3_SOC_ID(am62ax, AM62AX)
 K3_SOC_ID(j784s4, J784S4)
+K3_SOC_ID(am62px, AM62PX)
 
 #define K3_SEC_MGR_SYS_STATUS		0x44234100
 #define SYS_STATUS_DEV_TYPE_SHIFT	0

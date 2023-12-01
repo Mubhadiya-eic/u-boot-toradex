@@ -23,7 +23,11 @@
 #include <asm/gpio.h>
 #include <cpu_func.h>
 
+#include <linux/sizes.h>
+
 #include "../common/board_detect.h"
+
+#include "../common/rtc.c"
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -44,7 +48,9 @@ static struct gpio_desc board_det_gpios[AM62X_LPSK_BRD_DET_COUNT];
 
 #define board_is_am62x_skevm()  (board_ti_k3_is("AM62-SKEVM") || \
 				 board_ti_k3_is("AM62B-SKEVM"))
+#define board_is_am62b_p1_skevm() board_ti_k3_is("AM62B-SKEVM-P1")
 #define board_is_am62x_lp_skevm()  board_ti_k3_is("AM62-LP-SKEVM")
+#define board_is_am62x_sip_skevm()  board_ti_k3_is("AM62SIP-SKEVM")
 #define board_is_am62x_play()	board_ti_k3_is("BEAGLEPLAY-A0-")
 
 #if CONFIG_IS_ENABLED(SPLASH_SCREEN)
@@ -72,6 +78,9 @@ int splash_screen_prepare(void)
 
 int board_init(void)
 {
+	if (IS_ENABLED(CONFIG_BOARD_HAS_32K_RTC_CRYSTAL))
+		board_rtc_init();
+
 	return 0;
 }
 
@@ -83,6 +92,16 @@ int dram_init(void)
 int dram_init_banksize(void)
 {
 	return fdtdec_setup_memory_banksize();
+}
+
+phys_size_t get_effective_memsize(void)
+{
+	/*
+	 * Just below 512MB are TF-A and OPTEE reserve regions, thus
+	 * SPL/U-Boot RAM has to start below that. Leave 64MB space for
+	 * all reserved memories.
+	 */
+	return gd->ram_size == SZ_512M ? SZ_512M - SZ_64M  : gd->ram_size;
 }
 
 #if defined(CONFIG_SPL_BUILD)
@@ -108,13 +127,6 @@ static int video_setup(void)
 #define CTRLMMR_USB1_PHY_CTRL	0x43004018
 #define CORE_VOLTAGE		0x80000000
 
-#define WKUP_CTRLMMR_DBOUNCE_CFG1 0x04504084
-#define WKUP_CTRLMMR_DBOUNCE_CFG2 0x04504088
-#define WKUP_CTRLMMR_DBOUNCE_CFG3 0x0450408c
-#define WKUP_CTRLMMR_DBOUNCE_CFG4 0x04504090
-#define WKUP_CTRLMMR_DBOUNCE_CFG5 0x04504094
-#define WKUP_CTRLMMR_DBOUNCE_CFG6 0x04504098
-
 void spl_board_init(void)
 {
 	u32 val;
@@ -128,29 +140,6 @@ void spl_board_init(void)
 	val = readl(CTRLMMR_USB1_PHY_CTRL);
 	val &= ~(CORE_VOLTAGE);
 	writel(val, CTRLMMR_USB1_PHY_CTRL);
-
-	/* We have 32k crystal, so lets enable it */
-	val = readl(MCU_CTRL_LFXOSC_CTRL);
-	val &= ~(MCU_CTRL_LFXOSC_32K_DISABLE_VAL);
-	writel(val, MCU_CTRL_LFXOSC_CTRL);
-	/* Add any TRIM needed for the crystal here.. */
-	/* Make sure to mux up to take the SoC 32k from the crystal */
-	writel(MCU_CTRL_DEVICE_CLKOUT_LFOSC_SELECT_VAL,
-	       MCU_CTRL_DEVICE_CLKOUT_32K_CTRL);
-
-	/* Setup debounce conf registers - arbitrary values. Times are approx */
-	/* 1.9ms debounce @ 32k */
-	writel(WKUP_CTRLMMR_DBOUNCE_CFG1, 0x1);
-	/* 5ms debounce @ 32k */
-	writel(WKUP_CTRLMMR_DBOUNCE_CFG2, 0x5);
-	/* 20ms debounce @ 32k */
-	writel(WKUP_CTRLMMR_DBOUNCE_CFG3, 0x14);
-	/* 46ms debounce @ 32k */
-	writel(WKUP_CTRLMMR_DBOUNCE_CFG4, 0x18);
-	/* 100ms debounce @ 32k */
-	writel(WKUP_CTRLMMR_DBOUNCE_CFG5, 0x1c);
-	/* 156ms debounce @ 32k */
-	writel(WKUP_CTRLMMR_DBOUNCE_CFG6, 0x1f);
 
 	video_setup();
 	enable_caches();
@@ -253,8 +242,12 @@ static void setup_board_eeprom_env(void)
 
 	if (board_is_am62x_skevm())
 		name = "am62x_skevm";
+	else if (board_is_am62b_p1_skevm())
+		name = "am62b_p1_skevm";
 	else if (board_is_am62x_lp_skevm())
 		name = "am62x_lp_skevm";
+	else if (board_is_am62x_sip_skevm())
+		name = "am62x_sip_skevm";
 	else if (board_is_am62x_play())
 		name = "am62x_beagleplay";
 	else
