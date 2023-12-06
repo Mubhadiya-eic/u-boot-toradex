@@ -81,6 +81,13 @@
 	bootph-pre-ram;
 };
 
+/* MDIO, shared by Verdin ETH_1 (On-module PHY) and Verdin ETH_2_RGMII */
+&cpsw3g_mdio {
+	/delete-property/ assigned-clocks;
+	/delete-property/ assigned-clock-parents;
+	/delete-property/ assigned-clock-rates;
+};
+
 &dmsc {
 	bootph-pre-ram;
 
