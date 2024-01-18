@@ -149,6 +149,15 @@ const char * const toradex_modules[] = {
 	[64] = "Verdin iMX8M Plus Quad 2GB Wi-Fi / BT IT",
 	[65] = "Verdin iMX8M Plus QuadLite 1GB IT",
 	[66] = "Verdin iMX8M Plus Quad 8GB Wi-Fi / BT",
+	[77] = "Colibri iMX6S 256MB",
+	[78] = "Colibri iMX6S 256MB IT",
+	[79] = "Colibri iMX6DL 512MB",
+	[80] = "Colibri iMX6DL 512MB IT",
+	[81] = "Colibri iMX7D 512MB",
+	[82] = "Apalis iMX6D 512MB",
+	[83] = "Apalis iMX6Q 1GB",
+	[84] = "Apalis iMX6D 1GB IT",
+	[85] = "Apalis iMX6Q 2GB IT",
 };
 
 const char * const toradex_carrier_boards[] = {
