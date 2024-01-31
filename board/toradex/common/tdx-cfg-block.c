@@ -152,6 +152,7 @@ const char * const toradex_modules[] = {
 	[68] = "Verdin iMX8M Mini Quad 2GB WB IT No CAN",
 	[69] = "UNKNOWN MODULE",
 	[70] = "Verdin iMX8M Plus Quad 8GB WB IT",
+	[86] = "Verdin iMX8M Mini DualLite 2GB IT",
 };
 
 const char * const toradex_carrier_boards[] = {
