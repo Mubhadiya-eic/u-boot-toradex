@@ -24,6 +24,7 @@
 #include <asm/io.h>
 #include <fs_loader.h>
 #include <fs.h>
+#include <efi_loader.h>
 #include <env.h>
 #include <elf.h>
 #include <soc.h>
@@ -632,4 +633,15 @@ int misc_init_r(void)
 	}
 
 	return 0;
+}
+
+void efi_add_known_memory(void)
+{
+	if (IS_ENABLED(CONFIG_EFI_LOADER))
+		/*
+		 * Memory over ram_top can be used by various firmware
+		 * Declare to EFI only memory area below ram_top
+		 */
+		efi_add_memory_map(gd->ram_base, gd->ram_top - gd->ram_base,
+				   EFI_CONVENTIONAL_MEMORY);
 }
