@@ -102,6 +102,18 @@ enum {
 	VERDIN_AM62D_1G_IT,
 	VERDIN_AM62D_1G_WIFI_BT_IT, /* 75 */
 	VERDIN_AM62Q_2G_WIFI_BT_IT,
+	/* 77 */
+	/* 78 */
+	/* 79 */
+	/* 80 */
+	/* 81 */
+	/* 82 */
+	/* 83 */
+	/* 84 */
+	/* 85 */
+	/* 86 */
+	/* 87 */
+	AQUILA_AM69O_32G_WIFI_BT_IT = 88,
 };
 
 enum {
