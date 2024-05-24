@@ -431,8 +431,14 @@ int board_phys_sdram_size(phys_size_t *bank1_size, phys_size_t *bank2_size)
 	if (!bank1_size || !bank2_size)
 	return -EINVAL;
 
-	*bank1_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE);
-	*bank2_size = 0;
+	/* i.MX 8M Mini supports max. 4GB memory in two albeit concecutive banks */
+	*bank1_size = get_ram_size((void *)PHYS_SDRAM, PHYS_SDRAM_SIZE + PHYS_SDRAM_2_SIZE);
+
+	if (*bank1_size > PHYS_SDRAM_SIZE) {
+		*bank2_size = *bank1_size - PHYS_SDRAM_SIZE;
+		*bank1_size = PHYS_SDRAM_SIZE;
+	}
+
 	return 0;
 }
 
