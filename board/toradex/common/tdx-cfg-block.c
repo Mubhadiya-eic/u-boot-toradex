@@ -156,6 +156,7 @@ const char * const toradex_modules[] = {
 	[87] = "Verdin iMX8M Mini Quad 2GB IT",
 	[88] = "Aquila AM69 Octa 32GB WB IT",
 	[89] = "Verdin iMX95 Hexa 16GB WB IT",
+	[90] = "Verdin iMX8M Mini Quad 4GB WB ET",
 };
 
 const char * const toradex_carrier_boards[] = {
